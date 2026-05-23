@@ -25,7 +25,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { Transaction, InputMethod } from "@/types/finance";
-import { cn, formatIDR } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 const EXPENSE_CATS = [
   { id: "F&B", name: "Makan", icon: <Utensils size={16} /> },
@@ -56,16 +56,16 @@ export default function AddView({ onAdd, onComplete }: AddViewProps) {
   const [showSuccess, setShowSuccess] = useState(false);
 
   const [aiInput, setAiInput] = useState("");
-  const [scanStep, setScanStep] = useState<"idle" | "scanning" | "review">(
-    "idle",
-  );
+  const [scanStep, setScanStep] = useState<"idle" | "scanning" | "review">("idle");
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const base64ImageRef = useRef<string | null>(null);
   const [scannedData, setScannedData] = useState<{
     amount: number;
     category: string;
     notes: string;
     items: string[];
   } | null>(null);
+  const [reviewForm, setReviewForm] = useState<{ amount: string; category: string; notes: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [manualForm, setManualForm] = useState({
@@ -128,9 +128,15 @@ export default function AddView({ onAdd, onComplete }: AddViewProps) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ image: reader.result }),
         });
-        if (!res.ok) throw new Error("Scan failed");
         const data = await res.json();
+        if (!res.ok) {
+          setScanStep("idle");
+          alert(data.error || "Failed to scan receipt. Please try again.");
+          return;
+        }
+        base64ImageRef.current = reader.result as string;
         setScannedData(data);
+        setReviewForm({ amount: String(data.amount), category: data.category, notes: data.notes });
         setScanStep("review");
       } catch {
         setScanStep("idle");
@@ -140,13 +146,15 @@ export default function AddView({ onAdd, onComplete }: AddViewProps) {
   };
 
   const handleSaveScan = () => {
-    if (!scannedData) return;
+    if (!scannedData || !reviewForm) return;
     onAdd({
-      amount: scannedData.amount,
-      category: scannedData.category,
-      notes: scannedData.notes,
+      amount: Number(reviewForm.amount) || scannedData.amount,
+      category: reviewForm.category,
+      notes: reviewForm.notes,
       type: "EXPENSE",
       input_method: "SCAN",
+      items: scannedData.items,
+      receipt_image: base64ImageRef.current ?? undefined,
     });
     triggerSuccess();
   };
@@ -310,11 +318,11 @@ export default function AddView({ onAdd, onComplete }: AddViewProps) {
                     />
                   </div>
                 )}
-                {scanStep === "review" && scannedData && (
+                {scanStep === "review" && scannedData && reviewForm && (
                   <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-zinc-100 space-y-5"
+                    className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-zinc-100 space-y-4"
                   >
                     {capturedImage && (
                       <div className="w-full h-40 rounded-2xl overflow-hidden bg-zinc-50">
@@ -325,18 +333,58 @@ export default function AddView({ onAdd, onComplete }: AddViewProps) {
                         />
                       </div>
                     )}
-                    <div className="text-center space-y-1">
-                      <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
-                        Found
-                      </p>
-                      <h3 className="text-4xl font-black text-zinc-900 tracking-tighter">
-                        {formatIDR(scannedData.amount)}
-                      </h3>
-                      <p className="text-sm font-semibold text-zinc-400">
-                        {scannedData.notes}
-                      </p>
+
+                    {/* Items list */}
+                    {scannedData.items.length > 0 && (
+                      <div className="bg-zinc-50 rounded-2xl p-4 space-y-1.5">
+                        <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Items found</p>
+                        {scannedData.items.map((item, i) => (
+                          <div key={i} className="flex items-start gap-2 text-sm text-zinc-600">
+                            <span className="text-zinc-300 mt-0.5">•</span>
+                            <span>{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Editable fields */}
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Amount</label>
+                        <div className="flex items-center gap-2 bg-zinc-50 rounded-xl px-4 py-3">
+                          <span className="text-sm font-bold text-zinc-400">Rp</span>
+                          <input
+                            type="number"
+                            value={reviewForm.amount}
+                            onChange={(e) => setReviewForm((f) => f ? { ...f, amount: e.target.value } : f)}
+                            className="flex-1 bg-transparent outline-none text-zinc-900 font-bold text-sm"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Category</label>
+                        <select
+                          value={reviewForm.category}
+                          onChange={(e) => setReviewForm((f) => f ? { ...f, category: e.target.value } : f)}
+                          className="w-full bg-zinc-50 rounded-xl px-4 py-3 text-sm text-zinc-900 font-semibold outline-none"
+                        >
+                          {["F&B","Transport","Groceries","Shopping","Entertainment","Bills","Other"].map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Notes</label>
+                        <input
+                          type="text"
+                          value={reviewForm.notes}
+                          onChange={(e) => setReviewForm((f) => f ? { ...f, notes: e.target.value } : f)}
+                          className="w-full bg-zinc-50 rounded-xl px-4 py-3 text-sm text-zinc-900 font-semibold outline-none"
+                        />
+                      </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+
+                    <div className="grid grid-cols-2 gap-3 pt-1">
                       <button
                         onClick={() => setScanStep("idle")}
                         className="py-4 rounded-2xl border border-zinc-200 text-zinc-500 font-bold text-sm"

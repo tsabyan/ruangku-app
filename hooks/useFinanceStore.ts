@@ -43,6 +43,8 @@ export function useFinanceStore() {
           notes: t.notes ?? '',
           date: t.date,
           input_method: t.input_method as 'AI' | 'SCAN' | 'MANUAL',
+          items: t.items ?? [],
+          receipt_image: t.receipt_image ?? undefined,
         })));
       }
 
@@ -93,6 +95,8 @@ export function useFinanceStore() {
       notes: tx.notes,
       input_method: tx.input_method,
       date: new Date().toISOString(),
+      items: tx.items ?? [],
+      receipt_image: tx.receipt_image ?? null,
     }).select().single();
 
     if (!error && data) {
@@ -104,10 +108,22 @@ export function useFinanceStore() {
         notes: data.notes ?? '',
         date: data.date,
         input_method: data.input_method,
+        items: data.items ?? [],
+        receipt_image: data.receipt_image ?? undefined,
       };
       setTransactions((prev) => [newTx, ...prev]);
     }
   }, [userId]);
+
+  const updateTransaction = useCallback(async (id: string, updates: Partial<Omit<Transaction, 'id'>>) => {
+    setTransactions((prev) => prev.map((t) => t.id === id ? { ...t, ...updates } : t));
+    await supabase.from('transactions').update(updates).eq('id', id);
+  }, []);
+
+  const deleteTransaction = useCallback(async (id: string) => {
+    setTransactions((prev) => prev.filter((t) => t.id !== id));
+    await supabase.from('transactions').delete().eq('id', id);
+  }, []);
 
   const setBudgetLimit = useCallback(async (amount: number) => {
     if (!userId) return;
@@ -134,6 +150,6 @@ export function useFinanceStore() {
   return {
     transactions, totalExpense, budgetLimit, budgetRemaining, categoryBudgets,
     isLoading,
-    addTransaction, setBudgetLimit, updateCategoryBudget,
+    addTransaction, updateTransaction, deleteTransaction, setBudgetLimit, updateCategoryBudget,
   };
 }

@@ -10,6 +10,8 @@ export interface Transaction {
   notes: string;
   date: string;
   input_method: InputMethod;
+  items?: string[];
+  receipt_image?: string;
 }
 
 export interface CategoryBudget {

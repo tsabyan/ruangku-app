@@ -1,26 +1,29 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { motion } from "motion/react";
-import { Search, X } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";import { Search, X } from "lucide-react";
 import { Transaction } from "@/types/finance";
 import { formatIDR, cn } from "@/lib/utils";
 import { getCategoryIcon } from "./categoryIcons";
+import { TransactionDetail } from "./TransactionDetail";
 
 interface HistoryViewProps {
   transactions: Transaction[];
   onBack: () => void;
+  onUpdate: (id: string, updates: Partial<Omit<Transaction, "id">>) => void;
+  onDelete: (id: string) => void;
 }
 
 export default function HistoryView({
   transactions,
   onBack,
+  onUpdate,
+  onDelete,
 }: HistoryViewProps) {
   const [search, setSearch] = useState("");
   const [selectedCat, setSelectedCat] = useState("All");
-  const [selectedType, setSelectedType] = useState<
-    "ALL" | "EXPENSE" | "INCOME"
-  >("ALL");
+  const [selectedType, setSelectedType] = useState<"ALL" | "EXPENSE" | "INCOME">("ALL");
+  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
 
   const categories = useMemo(
     () => ["All", ...Array.from(new Set(transactions.map((t) => t.category)))],
@@ -112,7 +115,8 @@ export default function HistoryView({
               initial={{ y: 8, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: i * 0.02 }}
-              className="flex items-center justify-between p-4 bg-white rounded-2xl border border-zinc-100"
+              onClick={() => setSelectedTx(t)}
+              className="flex items-center justify-between p-4 bg-white rounded-2xl border border-zinc-100 cursor-pointer active:scale-[0.98] hover:border-zinc-200 transition-all"
             >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-zinc-50 flex items-center justify-center">
@@ -146,6 +150,24 @@ export default function HistoryView({
           ))
         )}
       </div>
+
+      {/* Transaction detail drawer */}
+      <AnimatePresence>
+        {selectedTx && (
+          <TransactionDetail
+            transaction={selectedTx}
+            onClose={() => setSelectedTx(null)}
+            onUpdate={(id, updates) => {
+              onUpdate(id, updates);
+              setSelectedTx((prev) => prev ? { ...prev, ...updates } : null);
+            }}
+            onDelete={(id) => {
+              onDelete(id);
+              setSelectedTx(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

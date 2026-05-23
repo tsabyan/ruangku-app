@@ -1,0 +1,16 @@
+{
+  "name": "Ruangku",
+  "short_name": "Ruangku",
+  "description": "Your personal space for finance, goals, and notes",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#18181b",
+  "icons": [
+    {
+      "src": "/next.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

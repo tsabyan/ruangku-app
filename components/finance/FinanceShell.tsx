@@ -15,7 +15,7 @@ import SettingsView from "./SettingsView";
 
 export default function FinanceShell() {
   const [currentView, setCurrentView] = useState<View>("home");
-  const { transactions, addTransaction, isLoading } = useFinanceStore();
+  const { transactions, addTransaction, updateTransaction, deleteTransaction, isLoading } = useFinanceStore();
 
   const renderView = () => {
     switch (currentView) {
@@ -43,6 +43,8 @@ export default function FinanceShell() {
           <HistoryView
             transactions={transactions}
             onBack={() => setCurrentView("home")}
+            onUpdate={updateTransaction}
+            onDelete={deleteTransaction}
           />
         );
       default:
