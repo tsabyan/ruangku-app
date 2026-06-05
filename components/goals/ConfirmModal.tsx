@@ -1,6 +1,5 @@
 "use client";
 
-import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 
 interface ConfirmModalProps {
@@ -29,15 +28,10 @@ export function ConfirmModal({
   };
 
   return (
-    <AnimatePresence>
+    <>
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-zinc-900/40 backdrop-blur-sm">
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-white w-full max-w-xs rounded-2xl p-6 shadow-2xl space-y-4"
-          >
+          <div className="bg-white w-full max-w-xs rounded-2xl p-6 shadow-2xl space-y-4">
             <div className="space-y-1.5">
               <h3 className="text-base font-bold text-zinc-900">{title}</h3>
               <p className="text-sm text-zinc-500 leading-relaxed">{message}</p>
@@ -59,9 +53,9 @@ export function ConfirmModal({
                 {confirmLabel}
               </button>
             </div>
-          </motion.div>
+          </div>
         </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }

@@ -2,9 +2,8 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Plus, Hash, Pin } from "lucide-react";
-import ModuleHeader from "@/components/ui/ModuleHeader";
-import { motion } from "motion/react";
+import { Search, Hash, Pin } from "lucide-react";
+import FloatNav from "@/components/ui/FloatNav";
 import { formatDistanceToNow } from "date-fns";
 import { useNoteStore } from "@/hooks/useNoteStore";
 import { cn } from "@/lib/utils";
@@ -53,9 +52,6 @@ export default function NoteList() {
 
   return (
     <div className="flex flex-col h-screen bg-white">
-      {/* Header */}
-      <ModuleHeader />
-
       {/* Content title + search */}
       <div className="px-6 pt-6 pb-4 space-y-4">
         <h1 className="text-3xl font-bold tracking-tight text-zinc-900">
@@ -115,11 +111,8 @@ export default function NoteList() {
         ) : (
           <div className="space-y-3" key={`${search}__${activeTag}`}>
             {filteredNotes.map((note, i) => (
-              <motion.div
+              <div
                 key={note.id}
-                initial={{ y: 16, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.3, delay: i * 0.05 }}
                 onClick={() => router.push(`/notes/${note.id}`)}
                 className="bg-white border border-zinc-100 p-4 rounded-3xl shadow-sm hover:shadow-md hover:border-zinc-200 active:scale-[0.98] transition-all cursor-pointer group"
               >
@@ -157,19 +150,12 @@ export default function NoteList() {
                     ))}
                   </div>
                 )}
-              </motion.div>
+              </div>
             ))}
           </div>
         )}
       </div>
-      {/* FAB */}
-      <button
-        onClick={handleCreateNote}
-        className="fixed bottom-8 bg-zinc-900 text-white p-4 rounded-full shadow-2xl shadow-zinc-400/30 active:scale-90 hover:scale-105 transition-all z-20 group"
-        style={{ right: "max(1.5rem, calc(50% - 14rem + 1.5rem))" }}
-      >
-        <Plus className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
-      </button>
+      <FloatNav onPlus={handleCreateNote} />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "motion/react";import { Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { Transaction } from "@/types/finance";
 import { formatIDR, cn } from "@/lib/utils";
 import { getCategoryIcon } from "./categoryIcons";
@@ -22,7 +22,9 @@ export default function HistoryView({
 }: HistoryViewProps) {
   const [search, setSearch] = useState("");
   const [selectedCat, setSelectedCat] = useState("All");
-  const [selectedType, setSelectedType] = useState<"ALL" | "EXPENSE" | "INCOME">("ALL");
+  const [selectedType, setSelectedType] = useState<
+    "ALL" | "EXPENSE" | "INCOME"
+  >("ALL");
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
 
   const categories = useMemo(
@@ -110,11 +112,8 @@ export default function HistoryView({
           </div>
         ) : (
           filtered.map((t, i) => (
-            <motion.div
+            <div
               key={t.id}
-              initial={{ y: 8, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: i * 0.02 }}
               onClick={() => setSelectedTx(t)}
               className="flex items-center justify-between p-4 bg-white rounded-2xl border border-zinc-100 cursor-pointer active:scale-[0.98] hover:border-zinc-200 transition-all"
             >
@@ -146,28 +145,26 @@ export default function HistoryView({
                   via {t.input_method}
                 </span>
               </div>
-            </motion.div>
+            </div>
           ))
         )}
       </div>
 
       {/* Transaction detail drawer */}
-      <AnimatePresence>
-        {selectedTx && (
-          <TransactionDetail
-            transaction={selectedTx}
-            onClose={() => setSelectedTx(null)}
-            onUpdate={(id, updates) => {
-              onUpdate(id, updates);
-              setSelectedTx((prev) => prev ? { ...prev, ...updates } : null);
-            }}
-            onDelete={(id) => {
-              onDelete(id);
-              setSelectedTx(null);
-            }}
-          />
-        )}
-      </AnimatePresence>
+      {selectedTx && (
+        <TransactionDetail
+          transaction={selectedTx}
+          onClose={() => setSelectedTx(null)}
+          onUpdate={(id, updates) => {
+            onUpdate(id, updates);
+            setSelectedTx((prev) => (prev ? { ...prev, ...updates } : null));
+          }}
+          onDelete={(id) => {
+            onDelete(id);
+            setSelectedTx(null);
+          }}
+        />
+      )}
     </div>
   );
 }

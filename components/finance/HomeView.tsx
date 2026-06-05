@@ -2,7 +2,6 @@
 
 import { Transaction } from "@/types/finance";
 import { formatIDR, cn } from "@/lib/utils";
-import { motion } from "motion/react";
 import { useMemo } from "react";
 import { getCategoryIcon } from "./categoryIcons";
 
@@ -67,12 +66,7 @@ export default function HomeView({
           </header>
 
           {/* Balance Card */}
-          <motion.div
-            initial={{ y: 15, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
-            className="p-6 rounded-4xl bg-white border border-zinc-100 shadow-[0_4px_24px_rgba(0,0,0,0.04)] space-y-5"
-          >
+          <div className="p-6 rounded-4xl bg-white border border-zinc-100 shadow-[0_4px_24px_rgba(0,0,0,0.04)] space-y-5">
             <div>
               <p className="text-zinc-400 text-xs font-bold uppercase tracking-widest mb-1">
                 Balance This Month
@@ -105,7 +99,7 @@ export default function HomeView({
                 </p>
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* Recent Transactions */}
           <section className="space-y-4 pb-4">
@@ -122,11 +116,8 @@ export default function HomeView({
             </div>
             <div className="space-y-3">
               {transactions.slice(0, 5).map((t, i) => (
-                <motion.div
+                <div
                   key={t.id}
-                  initial={{ y: 16, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ duration: 0.3, delay: i * 0.05 }}
                   className="flex items-center justify-between p-4 bg-white rounded-2xl border border-zinc-100"
                 >
                   <div className="flex items-center gap-4">
@@ -161,7 +152,7 @@ export default function HomeView({
                       {t.input_method}
                     </span>
                   </div>
-                </motion.div>
+                </div>
               ))}
               {transactions.length === 0 && (
                 <div className="text-center py-8 text-zinc-300 text-sm">

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "motion/react";
 import {
   Wallet,
   Target,
@@ -45,27 +44,6 @@ const modules = [
   },
 ];
 
-const containerVariants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
-
-const cardVariants = {
-  hidden: { opacity: 0, y: 24 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.5,
-      ease: [0.32, 0.72, 0, 1] as [number, number, number, number],
-    },
-  },
-};
-
 function getGreeting() {
   const hour = new Date().getHours();
   if (hour < 11) return "Good Morning";
@@ -87,12 +65,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen bg-white">
       {/* Header */}
-      <motion.header
-        initial={{ opacity: 0, y: -16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
-        className="px-6 py-8"
-      >
+      <header className="px-6 py-8">
         {/* Logo mark + profile */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-2">
@@ -121,37 +94,22 @@ export default function HomePage() {
           </h1>
           <p className="text-sm text-zinc-400">{getTodayLabel()}</p>
         </div>
-      </motion.header>
+      </header>
 
       {/* Divider */}
-      <motion.div
-        initial={{ scaleX: 0, originX: 0 }}
-        animate={{ scaleX: 1 }}
-        transition={{ duration: 0.4, delay: 0.2 }}
-        className="mx-6 h-px bg-zinc-100"
-      />
+      <div className="mx-6 h-px bg-zinc-100" />
 
       {/* Module Cards */}
       <main className="flex-1 px-6 pt-8 pb-12">
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-5"
-        >
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-5">
           Your Spaces
-        </motion.p>
+        </p>
 
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="space-y-4"
-        >
+        <div className="space-y-4">
           {modules.map((mod) => {
             const Icon = mod.icon;
             return (
-              <motion.div key={mod.href} variants={cardVariants}>
+              <div key={mod.href}>
                 <Link href={mod.href} className="block group">
                   <div className="relative overflow-hidden bg-white border border-zinc-100 rounded-3xl p-5 shadow-sm hover:shadow-md hover:border-zinc-200 active:scale-[0.98] transition-all duration-200">
                     {/* Accent bar */}
@@ -189,23 +147,18 @@ export default function HomePage() {
                     </div>
                   </div>
                 </Link>
-              </motion.div>
+              </div>
             );
           })}
-        </motion.div>
+        </div>
       </main>
 
       {/* Footer */}
-      <motion.footer
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.6 }}
-        className="px-6 pb-10 text-center"
-      >
+      <footer className="px-6 pb-10 text-center">
         <p className="text-[10px] text-zinc-200 font-bold uppercase tracking-[0.2em]">
           Ruangku v1.0.0
         </p>
-      </motion.footer>
+      </footer>
     </div>
   );
 }

@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { Task } from "@/types/goals";
 import { getDaysInMonth, getMonthYearTitle, cn } from "@/lib/utils";
-import { motion } from "motion/react";
 
 interface TaskHeatmapProps {
   taskTitle: string;
@@ -37,12 +36,7 @@ export function TaskHeatmap({ history }: TaskHeatmapProps) {
   const emptyPrefix = Array.from({ length: firstDayOfMonth }, (_, i) => i);
 
   return (
-    <motion.div
-      initial={{ height: 0, opacity: 0 }}
-      animate={{ height: "auto", opacity: 1 }}
-      exit={{ height: 0, opacity: 0 }}
-      className="overflow-hidden bg-zinc-50 rounded-2xl p-4 mt-2 border border-zinc-100"
-    >
+    <div className="overflow-hidden bg-zinc-50 rounded-2xl p-4 mt-2 border border-zinc-100">
       <div className="flex justify-between items-center mb-3 px-1">
         <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">
           {monthTitle}
@@ -86,6 +80,6 @@ export function TaskHeatmap({ history }: TaskHeatmapProps) {
           );
         })}
       </div>
-    </motion.div>
+    </div>
   );
 }

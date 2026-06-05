@@ -1,19 +1,12 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import {
-  Plus,
-  Edit2,
-  PauseCircle,
-  CheckCircle2,
-  MoreVertical,
-} from "lucide-react";
+import { Edit2, PauseCircle, CheckCircle2, MoreVertical } from "lucide-react";
 import { Goal, GoalStatus } from "@/types/goals";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "motion/react";
 import { ConfirmModal } from "@/components/goals/ConfirmModal";
+import FloatNav from "@/components/ui/FloatNav";
 import { useRouter } from "next/navigation";
-import ModuleHeader from "@/components/ui/ModuleHeader";
 
 interface DashboardProps {
   goals: Goal[];
@@ -69,9 +62,6 @@ export function GoalDashboard({
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      {/* Header */}
-      <ModuleHeader />
-
       {/* Content */}
       <div className="flex-1 px-6 pt-6 pb-28 space-y-4">
         {/* Title + filters */}
@@ -107,15 +97,8 @@ export function GoalDashboard({
             </p>
           </div>
         )}
-        {filtered.map((goal, i) => (
-          <motion.div
-            key={goal.id}
-            layoutId={goal.id}
-            initial={{ y: 16, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.3, delay: i * 0.05 }}
-            className="relative"
-          >
+        {filtered.map((goal) => (
+          <div key={goal.id} className="relative">
             <div className="flex items-center justify-between p-4 bg-white border border-zinc-100 rounded-2xl hover:border-zinc-200 transition-all shadow-sm group">
               <button
                 onClick={() => router.push(`/goals/${goal.id}`)}
@@ -146,19 +129,14 @@ export function GoalDashboard({
                 >
                   <MoreVertical className="w-4 h-4" />
                 </button>
-                <AnimatePresence>
+                <>
                   {activeMenuId === goal.id && (
                     <>
                       <div
                         className="fixed inset-0 z-10"
                         onClick={() => setActiveMenuId(null)}
                       />
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: -8 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: -8 }}
-                        className="absolute right-0 mt-1 w-44 bg-white border border-zinc-100 rounded-xl shadow-xl z-20 overflow-hidden py-1"
-                      >
+                      <div className="absolute right-0 mt-1 w-44 bg-white border border-zinc-100 rounded-xl shadow-xl z-20 overflow-hidden py-1">
                         {goal.status !== "achieved" && (
                           <button
                             onClick={(e) => {
@@ -213,23 +191,15 @@ export function GoalDashboard({
                             <span>Resume goal</span>
                           </button>
                         )}
-                      </motion.div>
+                      </div>
                     </>
                   )}
-                </AnimatePresence>
+                </>
               </div>
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
-
-      {/* FAB */}
-      <button
-        onClick={() => setIsAdding(true)}
-        className="fixed bottom-8 right-[max(1.5rem,calc(50%-14rem+1.5rem))] bg-zinc-900 text-white p-4 rounded-full shadow-2xl shadow-zinc-400/30 hover:scale-105 active:scale-90 transition-all z-20 group"
-      >
-        <Plus className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
-      </button>
 
       {/* Achieve confirm */}
       <ConfirmModal
@@ -248,65 +218,60 @@ export function GoalDashboard({
       />
 
       {/* Add / Edit modal */}
-      <AnimatePresence>
-        {(isAdding || editingGoal) && (
-          <div className="fixed inset-0 z-50 flex items-end justify-center p-4 bg-zinc-900/20 backdrop-blur-sm">
-            <motion.div
-              initial={{ y: 80, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 80, opacity: 0 }}
-              className="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl space-y-6 mb-4"
+      {(isAdding || editingGoal) && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center p-4 bg-zinc-900/20 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl space-y-6 mb-4">
+            <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400 text-center">
+              {editingGoal ? "Edit Goal" : "New Goal"}
+            </h2>
+            <form
+              onSubmit={editingGoal ? handleEditSubmit : handleSubmit}
+              className="space-y-8"
             >
-              <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400 text-center">
-                {editingGoal ? "Edit Goal" : "New Goal"}
-              </h2>
-              <form
-                onSubmit={editingGoal ? handleEditSubmit : handleSubmit}
-                className="space-y-8"
-              >
-                <div>
-                  <label className="block text-xs font-bold text-zinc-400 mb-3 tracking-widest uppercase">
-                    Goal Name
-                  </label>
-                  <input
-                    autoFocus
-                    type="text"
-                    value={editingGoal ? editingGoal.title : newGoalTitle}
-                    onChange={(e) =>
-                      editingGoal
-                        ? setEditingGoal({
-                            ...editingGoal,
-                            title: e.target.value,
-                          })
-                        : setNewGoalTitle(e.target.value)
-                    }
-                    placeholder="e.g. Learn Piano..."
-                    className="w-full px-0 py-2 border-b-2 border-zinc-100 focus:border-zinc-900 outline-none transition-colors text-lg font-medium"
-                  />
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsAdding(false);
-                      setEditingGoal(null);
-                    }}
-                    className="flex-1 py-3 rounded-xl border border-zinc-200 text-zinc-600 font-semibold hover:bg-zinc-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 py-3 rounded-xl bg-zinc-900 text-white font-semibold hover:bg-zinc-800 transition-colors"
-                  >
-                    Save
-                  </button>
-                </div>
-              </form>
-            </motion.div>
+              <div>
+                <label className="block text-xs font-bold text-zinc-400 mb-3 tracking-widest uppercase">
+                  Goal Name
+                </label>
+                <input
+                  autoFocus
+                  type="text"
+                  value={editingGoal ? editingGoal.title : newGoalTitle}
+                  onChange={(e) =>
+                    editingGoal
+                      ? setEditingGoal({
+                          ...editingGoal,
+                          title: e.target.value,
+                        })
+                      : setNewGoalTitle(e.target.value)
+                  }
+                  placeholder="e.g. Learn Piano..."
+                  className="w-full px-0 py-2 border-b-2 border-zinc-100 focus:border-zinc-900 outline-none transition-colors text-lg font-medium"
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAdding(false);
+                    setEditingGoal(null);
+                  }}
+                  className="flex-1 py-3 rounded-xl border border-zinc-200 text-zinc-600 font-semibold hover:bg-zinc-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 rounded-xl bg-zinc-900 text-white font-semibold hover:bg-zinc-800 transition-colors"
+                >
+                  Save
+                </button>
+              </div>
+            </form>
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
+
+      <FloatNav onPlus={() => setIsAdding(true)} />
     </div>
   );
 }

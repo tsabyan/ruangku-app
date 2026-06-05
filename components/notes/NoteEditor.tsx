@@ -27,7 +27,6 @@ import {
   AlignRight,
   AlignJustify,
 } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import TextAlign from "@tiptap/extension-text-align";
@@ -208,13 +207,7 @@ export default function NoteEditor() {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -16 }}
-      transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
-      className="flex flex-col h-screen bg-white"
-    >
+    <div className="flex flex-col h-screen bg-white">
       {/* Header */}
       <ModuleHeader
         backHref="/notes"
@@ -242,49 +235,42 @@ export default function NoteEditor() {
               >
                 <MoreVertical className="w-4 h-4" />
               </button>
-              <AnimatePresence>
-                {showMenu && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: -4 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                    className="absolute right-0 top-full mt-1 bg-white rounded-2xl shadow-xl border border-zinc-100 py-1 z-50 min-w-40"
+              {showMenu && (
+                <div className="absolute right-0 top-full mt-1 bg-white rounded-2xl shadow-xl border border-zinc-100 py-1 z-50 min-w-40">
+                  <button
+                    onClick={handleTogglePin}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
                   >
-                    <button
-                      onClick={handleTogglePin}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
-                    >
-                      {note?.pinned ? (
-                        <PinOff className="w-4 h-4 text-zinc-400" />
-                      ) : (
-                        <Pin className="w-4 h-4 text-zinc-400" />
-                      )}
-                      {note?.pinned ? "Unpin note" : "Pin note"}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowTagsPanel((v) => !v);
-                        setShowMenu(false);
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
-                    >
-                      <Tag className="w-4 h-4 text-zinc-400" />
-                      Edit tags
-                    </button>
-                    <div className="mx-3 border-t border-zinc-50" />
-                    <button
-                      onClick={() => {
-                        setShowDeleteConfirm(true);
-                        setShowMenu(false);
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Delete note
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    {note?.pinned ? (
+                      <PinOff className="w-4 h-4 text-zinc-400" />
+                    ) : (
+                      <Pin className="w-4 h-4 text-zinc-400" />
+                    )}
+                    {note?.pinned ? "Unpin note" : "Pin note"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowTagsPanel((v) => !v);
+                      setShowMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
+                  >
+                    <Tag className="w-4 h-4 text-zinc-400" />
+                    Edit tags
+                  </button>
+                  <div className="mx-3 border-t border-zinc-50" />
+                  <button
+                    onClick={() => {
+                      setShowDeleteConfirm(true);
+                      setShowMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete note
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         }
@@ -302,57 +288,49 @@ export default function NoteEditor() {
       />
 
       {/* Tags panel */}
-      <AnimatePresence>
-        {showTagsPanel && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden border-b border-zinc-100 bg-zinc-50"
-          >
-            <div className="px-6 py-3 flex items-center gap-2">
-              <Tag className="w-4 h-4 text-zinc-400 shrink-0" />
-              <input
-                autoFocus
-                type="text"
-                placeholder="tags, separate with spaces"
-                value={tagsInput}
-                onChange={(e) => {
-                  setHasEdited(true);
-                  setTagsInput(e.target.value);
-                  setSaving(true);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") setShowTagsPanel(false);
-                }}
-                className="flex-1 text-sm outline-none bg-transparent placeholder:text-zinc-300 text-zinc-700"
-              />
-              <button
-                onClick={() => setShowTagsPanel(false)}
-                className="text-xs font-semibold text-zinc-400 hover:text-zinc-700 px-2 py-1 rounded-lg hover:bg-zinc-100 transition-colors"
-              >
-                Done
-              </button>
+      {showTagsPanel && (
+        <div className="overflow-hidden border-b border-zinc-100 bg-zinc-50">
+          <div className="px-6 py-3 flex items-center gap-2">
+            <Tag className="w-4 h-4 text-zinc-400 shrink-0" />
+            <input
+              autoFocus
+              type="text"
+              placeholder="tags, separate with spaces"
+              value={tagsInput}
+              onChange={(e) => {
+                setHasEdited(true);
+                setTagsInput(e.target.value);
+                setSaving(true);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") setShowTagsPanel(false);
+              }}
+              className="flex-1 text-sm outline-none bg-transparent placeholder:text-zinc-300 text-zinc-700"
+            />
+            <button
+              onClick={() => setShowTagsPanel(false)}
+              className="text-xs font-semibold text-zinc-400 hover:text-zinc-700 px-2 py-1 rounded-lg hover:bg-zinc-100 transition-colors"
+            >
+              Done
+            </button>
+          </div>
+          {tagsInput.trim() && (
+            <div className="px-6 pb-3 flex flex-wrap gap-1.5">
+              {tagsInput
+                .split(/[ ,]+/)
+                .filter(Boolean)
+                .map((t) => (
+                  <span
+                    key={t}
+                    className="text-[11px] bg-white border border-zinc-200 text-zinc-500 px-2 py-0.5 rounded-full"
+                  >
+                    #{t.replace(/^#/, "")}
+                  </span>
+                ))}
             </div>
-            {tagsInput.trim() && (
-              <div className="px-6 pb-3 flex flex-wrap gap-1.5">
-                {tagsInput
-                  .split(/[ ,]+/)
-                  .filter(Boolean)
-                  .map((t) => (
-                    <span
-                      key={t}
-                      className="text-[11px] bg-white border border-zinc-200 text-zinc-500 px-2 py-0.5 rounded-full"
-                    >
-                      #{t.replace(/^#/, "")}
-                    </span>
-                  ))}
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </div>
+      )}
 
       {/* Editor Area */}
       <div className="flex-1 overflow-y-auto">
@@ -458,52 +436,45 @@ export default function NoteEditor() {
                 <AlignLeft className="w-4 h-4" />
               )}
             </ToolbarBtn>
-            <AnimatePresence>
-              {showAlignMenu && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8, scale: 0.95, x: "-50%" }}
-                  animate={{ opacity: 1, y: -4, scale: 1, x: "-50%" }}
-                  exit={{ opacity: 0, y: 8, scale: 0.95, x: "-50%" }}
-                  className="absolute bottom-full left-1/2 mb-2 bg-white rounded-xl shadow-xl border border-zinc-100 p-1 flex flex-col gap-1 z-50"
-                >
-                  {[
-                    { align: "left", icon: <AlignLeft className="w-4 h-4" /> },
-                    {
-                      align: "center",
-                      icon: <AlignCenter className="w-4 h-4" />,
-                    },
-                    {
-                      align: "right",
-                      icon: <AlignRight className="w-4 h-4" />,
-                    },
-                    {
-                      align: "justify",
-                      icon: <AlignJustify className="w-4 h-4" />,
-                    },
-                  ].map(({ align, icon }) => (
-                    <button
-                      key={align}
-                      onClick={() => {
-                        editor.chain().focus().setTextAlign(align).run();
-                        setShowAlignMenu(false);
-                      }}
-                      className={cn(
-                        "p-2 rounded-lg transition-colors",
-                        editor.isActive({ textAlign: align })
-                          ? "bg-zinc-100 text-zinc-900"
-                          : "text-zinc-400 hover:bg-zinc-50",
-                      )}
-                    >
-                      {icon}
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {showAlignMenu && (
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-white rounded-xl shadow-xl border border-zinc-100 p-1 flex flex-col gap-1 z-50">
+                {[
+                  { align: "left", icon: <AlignLeft className="w-4 h-4" /> },
+                  {
+                    align: "center",
+                    icon: <AlignCenter className="w-4 h-4" />,
+                  },
+                  {
+                    align: "right",
+                    icon: <AlignRight className="w-4 h-4" />,
+                  },
+                  {
+                    align: "justify",
+                    icon: <AlignJustify className="w-4 h-4" />,
+                  },
+                ].map(({ align, icon }) => (
+                  <button
+                    key={align}
+                    onClick={() => {
+                      editor.chain().focus().setTextAlign(align).run();
+                      setShowAlignMenu(false);
+                    }}
+                    className={cn(
+                      "p-2 rounded-lg transition-colors",
+                      editor.isActive({ textAlign: align })
+                        ? "bg-zinc-100 text-zinc-900"
+                        : "text-zinc-400 hover:bg-zinc-50",
+                    )}
+                  >
+                    {icon}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }
 
