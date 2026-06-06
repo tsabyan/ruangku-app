@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { Edit2, PauseCircle, CheckCircle2, MoreVertical } from "lucide-react";
+import { Edit2, PauseCircle, CheckCircle2, MoreVertical, Flame, Target } from "lucide-react";
 import { Goal, GoalStatus } from "@/types/goals";
 import { cn } from "@/lib/utils";
 import { ConfirmModal } from "@/components/goals/ConfirmModal";
@@ -219,8 +219,11 @@ export function GoalDashboard({
 
       {/* Add / Edit modal */}
       {(isAdding || editingGoal) && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center p-4 bg-zinc-900/20 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl space-y-6 mb-4">
+        <div 
+          onClick={(e) => { if (e.target === e.currentTarget) { setIsAdding(false); setEditingGoal(null); } }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/20 backdrop-blur-sm"
+        >
+          <div className="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl space-y-6">
             <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400 text-center">
               {editingGoal ? "Edit Goal" : "New Goal"}
             </h2>
@@ -271,7 +274,23 @@ export function GoalDashboard({
         </div>
       )}
 
-      <FloatNav onPlus={() => setIsAdding(true)} />
+      <FloatNav
+        onPlus={() => setIsAdding(true)}
+        gridItems={[
+          {
+            label: "Goals",
+            icon: <Target size={22} />,
+            onClick: () => router.push("/goals"),
+            active: true,
+          },
+          {
+            label: "Habits",
+            icon: <Flame size={22} />,
+            onClick: () => router.push("/goals/habits"),
+            active: false,
+          },
+        ]}
+      />
     </div>
   );
 }

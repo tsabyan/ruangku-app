@@ -10,15 +10,31 @@ export interface Goal {
   created_at: string;
 }
 
-export interface Task {
+// Habit Tracker Types
+export type HabitColor = 'emerald' | 'indigo' | 'rose' | 'amber' | 'sky' | 'violet' | 'fuchsia';
+export type HabitFrequency = 'daily' | 'weekly' | 'custom';
+
+export interface Habit {
   id: string;
-  goal_id: string;
-  title: string;
-  is_completed: boolean;
-  current_due_date: string; // YYYY-MM-DD
-  recurring_days: number[]; // 0-6 (Sun-Sat)
-  last_generated: string | null; // YYYY-MM-DD
+  user_id: string;
+  name: string;
+  description: string;
+  icon: string;
+  color: HabitColor;
+  frequency_type: HabitFrequency;
+  custom_days: number[];      // [0-6] Sun=0
+  target_frequency: number;   // 1 for daily, N for weekly/custom
+  is_archived: boolean;
+  goal_id: string | null;     // null = standalone habit
   created_at: string;
+  // Client-side: loaded from habit_logs
+  history: string[];          // ['YYYY-MM-DD', ...]
+}
+
+export interface HabitLog {
+  id: string;
+  habit_id: string;
+  log_date: string; // 'YYYY-MM-DD'
 }
 
 export type GoalView =

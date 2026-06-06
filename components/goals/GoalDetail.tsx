@@ -1,443 +1,220 @@
 "use client";
 
-import { useState, useRef, ChangeEvent, FormEvent } from "react";
-import {
-  Plus,
-  Check,
-  History,
-  Edit2,
-  Trash2,
-  MoreVertical,
-} from "lucide-react";
-import { Goal, Task } from "@/types/goals";
+import { useState, useRef, ChangeEvent } from "react";
+import { useRouter } from "next/navigation";
+import { Plus, Check, ChevronRight, Activity, ChevronDown, ChevronLeft } from "lucide-react";
+import { Goal, Habit, HabitColor, HabitFrequency } from "@/types/goals";
 import { cn, getTodayStr } from "@/lib/utils";
-
-import { TaskHeatmap } from "@/components/goals/TaskHeatmap";
 import { ConfirmModal } from "@/components/goals/ConfirmModal";
-import ModuleHeader from "@/components/ui/ModuleHeader";
+import { getStreaks } from "@/hooks/useHabitStore";
+import { HabitFormModal } from "@/components/goals/habit/HabitFormModal";
 
 interface GoalDetailProps {
   goal: Goal;
-  tasks: Task[];
+  goals: Goal[];
+  habits: Habit[];  // filtered: only habits where goal_id === goal.id
   onUpdateGoal: (updates: Partial<Goal>) => void;
   onDeleteGoal: () => void;
-  onAddTask: (title: string, recurring: number[]) => void;
-  onUpdateTask: (id: string, updates: Partial<Task>) => void;
-  onToggleTask: (id: string) => void;
-  onDeleteTask: (id: string) => void;
+  onAddHabit: (name: string, description: string, icon: string, color: HabitColor, frequencyType: HabitFrequency, customDays: number[], targetFrequency: number, goalId: string | null) => void;
+  onToggleHabitLog: (habitId: string, dateStr: string) => void;
 }
 
-export function GoalDetail({
-  goal,
-  tasks,
-  onUpdateGoal,
-  onDeleteGoal,
-  onAddTask,
-  onUpdateTask,
-  onToggleTask,
-  onDeleteTask,
-}: GoalDetailProps) {
-  const [logText, setLogText] = useState(goal.achievement_log_text);
-  const [isAddingTask, setIsAddingTask] = useState(false);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [newTaskTitle, setNewTaskTitle] = useState("");
-  const [recurringDays, setRecurringDays] = useState<number[]>([]);
-  const [expandedTaskTitle, setExpandedTaskTitle] = useState<string | null>(
-    null,
-  );
-  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
-  const [isDeletingGoal, setIsDeletingGoal] = useState(false);
-  const [taskToDeleteId, setTaskToDeleteId] = useState<string | null>(null);
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+export function GoalDetail({ goal, goals, habits, onUpdateGoal, onDeleteGoal, onAddHabit, onToggleHabitLog }: GoalDetailProps) {
+  const router = useRouter();
   const todayStr = getTodayStr();
   const todayDay = new Date().getDay();
-  const daysShort = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-  const dailyTasks = tasks.filter((t) => {
-    if (t.goal_id !== goal.id) return false;
-    return (
-      t.recurring_days.length === 0 ||
-      t.recurring_days.includes(todayDay) ||
-      t.current_due_date === todayStr
-    );
-  });
+  const [logText, setLogText] = useState(goal.achievement_log_text);
+  const [isAddingHabit, setIsAddingHabit] = useState(false);
+  const [isDeletingGoal, setIsDeletingGoal] = useState(false);
+  const [isArchivedExpanded, setIsArchivedExpanded] = useState(false);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleLogChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
     setLogText(val);
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    saveTimeoutRef.current = setTimeout(
-      () => onUpdateGoal({ achievement_log_text: val }),
-      1000,
-    );
+    saveTimeoutRef.current = setTimeout(() => onUpdateGoal({ achievement_log_text: val }), 1000);
   };
 
-  const handleAddTaskSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (newTaskTitle.trim()) {
-      onAddTask(newTaskTitle.trim(), recurringDays);
-      setNewTaskTitle("");
-      setRecurringDays([]);
-      setIsAddingTask(false);
-    }
-  };
-
-  const handleEditTaskSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (editingTask?.title.trim()) {
-      onUpdateTask(editingTask.id, {
-        title: editingTask.title.trim(),
-        recurring_days: recurringDays,
-      });
-      setEditingTask(null);
-      setRecurringDays([]);
-    }
-  };
-
-  const toggleDay = (day: number) =>
-    setRecurringDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day],
-    );
+  // Today's focus: habits that are scheduled for today
+  const todayHabits = habits.filter((h) => {
+    if (h.is_archived) return false;
+    if (h.frequency_type === "daily") return true;
+    if (h.frequency_type === "custom") return h.custom_days.includes(todayDay);
+    return true; // weekly: always show, let user decide
+  });
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      {/* Header */}
-      <ModuleHeader backHref="/goals" backLabel="Goals" />
+      <div className="px-6 pt-6">
+        <button onClick={() => router.push("/goals")}
+          className="flex items-center gap-1.5 -ml-1 text-zinc-500 hover:text-zinc-900 text-xs font-bold uppercase tracking-widest transition-colors">
+          <ChevronLeft className="w-5 h-5" /> Back
+        </button>
+      </div>
 
-      {/* Body */}
       <div className="flex-1 overflow-y-auto px-6 py-6 pb-28 space-y-8">
-        {/* Title row */}
+        {/* Title */}
         <div className="flex items-center justify-between gap-3">
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 leading-tight">
-            {goal.title}
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 leading-tight">{goal.title}</h1>
           {goal.status !== "achieved" && (
-            <button
-              onClick={() => setIsDeletingGoal(true)}
-              className="text-[10px] font-black text-red-400 hover:text-red-600 uppercase tracking-widest transition-colors shrink-0 mt-1"
-            >
+            <button onClick={() => setIsDeletingGoal(true)}
+              className="text-[10px] font-black text-red-400 hover:text-red-600 uppercase tracking-widest transition-colors shrink-0 mt-1">
               Delete
             </button>
           )}
         </div>
+
         {/* Achievement Log */}
         <section className="space-y-3">
-          <h2 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
-            Achievement Log
-          </h2>
+          <h2 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Achievement Log</h2>
           <textarea
             value={logText}
             onChange={handleLogChange}
             onBlur={() => onUpdateGoal({ achievement_log_text: logText })}
             readOnly={goal.status === "achieved"}
-            placeholder={
-              goal.status === "achieved"
-                ? "Goal achieved! Write your reflection here."
-                : "Write reflections, small wins, or notes..."
-            }
+            placeholder={goal.status === "achieved" ? "Goal achieved! Write your reflection here." : "Write reflections, small wins, or notes..."}
             className={cn(
               "w-full min-h-35 p-5 bg-zinc-50 border border-transparent rounded-2xl outline-none transition-all text-zinc-700 leading-relaxed resize-none text-sm",
-              goal.status !== "achieved" &&
-                "focus:border-zinc-100 focus:bg-white",
-              goal.status === "achieved" &&
-                "cursor-default text-zinc-500 italic",
+              goal.status !== "achieved" && "focus:border-zinc-100 focus:bg-white",
+              goal.status === "achieved" && "cursor-default text-zinc-500 italic",
             )}
           />
         </section>
 
-        {/* Today's Focus */}
+        {/* Today's Focus — habits linked to this goal */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
-              Today&apos;s Focus
-            </h2>
+            <h2 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Today&apos;s Focus</h2>
             {goal.status === "ongoing" && (
-              <button
-                onClick={() => {
-                  setIsAddingTask(true);
-                  setRecurringDays([]);
-                }}
-                className="p-1 text-zinc-300 hover:text-zinc-900 transition-colors"
-              >
+              <button onClick={() => setIsAddingHabit(true)} className="p-1 text-zinc-300 hover:text-zinc-900 transition-colors">
                 <Plus className="w-5 h-5" />
               </button>
             )}
           </div>
 
           <div className="space-y-3">
-            {dailyTasks.length === 0 && (
-              <p className="text-zinc-300 text-sm italic py-2">
-                No focus tasks for today yet.
-              </p>
+            {todayHabits.length === 0 && (
+              <p className="text-zinc-300 text-sm italic py-2">No habits for today yet. Add one!</p>
             )}
-            {dailyTasks.map((task) => {
-              const isScheduledToday =
-                task.recurring_days.length === 0 ||
-                task.recurring_days.includes(todayDay);
-              const canAction = goal.status === "ongoing" && isScheduledToday;
+            {todayHabits.map((habit) => {
+              const done = habit.history.includes(todayStr);
+              const { current: streak } = getStreaks(habit.history);
               return (
-                <div key={task.id} className="flex flex-col gap-1">
-                  <div className="flex items-center gap-3 group">
-                    {/* Toggle */}
-                    <button
-                      disabled={!canAction}
-                      onClick={() => onToggleTask(task.id)}
-                      className={cn(
-                        "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all shrink-0",
-                        task.is_completed
-                          ? "bg-zinc-900 border-zinc-900"
-                          : "border-zinc-200",
-                        !canAction &&
-                          !task.is_completed &&
-                          "bg-zinc-50 cursor-not-allowed",
-                      )}
-                    >
-                      {task.is_completed && (
-                        <Check className="w-3.5 h-3.5 text-white" />
-                      )}
-                    </button>
-                    {/* Info */}
-                    <div
-                      onClick={() =>
-                        setExpandedTaskTitle(
-                          expandedTaskTitle === task.title ? null : task.title,
-                        )
-                      }
-                      className="flex-1 cursor-pointer py-1"
-                    >
-                      <span
-                        className={cn(
-                          "text-base transition-all",
-                          task.is_completed
-                            ? "text-zinc-400 line-through"
-                            : "text-zinc-700 font-medium",
-                          !isScheduledToday &&
-                            !task.is_completed &&
-                            "text-zinc-400 font-normal",
-                        )}
-                      >
-                        {task.title}
+                <div key={habit.id} className="flex items-center gap-3 group">
+                  {/* Toggle */}
+                  <button
+                    disabled={goal.status !== "ongoing"}
+                    onClick={() => onToggleHabitLog(habit.id, todayStr)}
+                    className={cn(
+                      "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all shrink-0",
+                      done ? "bg-zinc-900 border-zinc-900" : "border-zinc-200",
+                      goal.status !== "ongoing" && !done && "bg-zinc-50 cursor-not-allowed"
+                    )}
+                  >
+                    {done && <Check className="w-3.5 h-3.5 text-white" />}
+                  </button>
+
+                  {/* Info — click to navigate to habit detail */}
+                  <button
+                    onClick={() => router.push(`/goals/habits/${habit.id}`)}
+                    className="flex-1 text-left py-1 min-w-0"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className={cn(
+                        "w-7 h-7 rounded-lg flex items-center justify-center text-zinc-700 transition-colors shrink-0",
+                        done ? "bg-zinc-50 text-zinc-300" : "bg-zinc-50 text-zinc-700"
+                      )}>
+                        <Activity className="w-4 h-4" />
                       </span>
-                      <div className="flex gap-1 mt-0.5 flex-wrap">
-                        {task.recurring_days.length === 0 ? (
-                          <span className="text-[9px] font-bold text-zinc-400 bg-zinc-100 uppercase px-1.5 py-0.5 rounded-sm tracking-wider">
-                            Every day
-                          </span>
-                        ) : (
-                          task.recurring_days.sort().map((d) => (
-                            <span
-                              key={d}
-                              className={cn(
-                                "text-[9px] font-bold uppercase px-1 py-0.5 rounded-sm",
-                                d === todayDay
-                                  ? "bg-zinc-200 text-zinc-900"
-                                  : "bg-zinc-100 text-zinc-400",
-                              )}
-                            >
-                              {dayNames[d]}
-                            </span>
-                          ))
+                      <div className="min-w-0">
+                        <span className={cn("text-base transition-all block truncate",
+                          done ? "text-zinc-400 line-through" : "text-zinc-700 font-medium"
+                        )}>
+                          {habit.name}
+                        </span>
+                        {streak > 0 && (
+                          <span className="text-[9px] font-bold text-amber-600">🔥 {streak}d streak</span>
                         )}
                       </div>
                     </div>
-                    {/* Menu */}
-                    <div className="relative">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveMenuId(
-                            activeMenuId === task.id ? null : task.id,
-                          );
-                        }}
-                        className={cn(
-                          "p-2 rounded-full transition-colors",
-                          activeMenuId === task.id
-                            ? "bg-zinc-100"
-                            : "text-zinc-200 hover:text-zinc-600",
-                        )}
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-                      {activeMenuId === task.id && (
-                        <>
-                          <div
-                            className="fixed inset-0 z-10"
-                            onClick={() => setActiveMenuId(null)}
-                          />
-                          <div className="absolute right-0 mt-1 w-44 bg-white border border-zinc-100 rounded-xl shadow-xl z-20 overflow-hidden py-1">
-                            {goal.status !== "achieved" && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingTask(task);
-                                  setRecurringDays(task.recurring_days);
-                                  setActiveMenuId(null);
-                                }}
-                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50"
-                              >
-                                <Edit2 className="w-4 h-4 text-zinc-400" />
-                                <span>Edit task</span>
-                              </button>
-                            )}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setExpandedTaskTitle(
-                                  expandedTaskTitle === task.title
-                                    ? null
-                                    : task.title,
-                                );
-                                setActiveMenuId(null);
-                              }}
-                              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50"
-                            >
-                              <History className="w-4 h-4 text-zinc-400" />
-                              <span>View history</span>
-                            </button>
-                            {goal.status !== "achieved" && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setTaskToDeleteId(task.id);
-                                  setActiveMenuId(null);
-                                }}
-                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 border-t border-zinc-50"
-                              >
-                                <Trash2 className="w-4 h-4 text-red-400" />
-                                <span>Delete task</span>
-                              </button>
-                            )}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  {/* Heatmap */}
-                  {expandedTaskTitle === task.title && (
-                    <TaskHeatmap
-                      taskTitle={task.title}
-                      history={tasks.filter(
-                        (t) => t.goal_id === goal.id && t.title === task.title,
-                      )}
-                    />
-                  )}
+                  </button>
+
+                  {/* Navigate arrow */}
+                  <ChevronRight className="w-4 h-4 text-zinc-200 group-hover:text-zinc-400 transition-colors shrink-0" />
                 </div>
               );
             })}
           </div>
+
+          {/* All habits for this goal (non-today) */}
+          {habits.filter((h) => !h.is_archived && !todayHabits.includes(h)).length > 0 && (
+            <div className="mt-4 space-y-2">
+              <p className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest">Other habits</p>
+              {habits.filter((h) => !h.is_archived && !todayHabits.includes(h)).map((habit) => (
+                <button key={habit.id} onClick={() => router.push(`/goals/habits/${habit.id}`)}
+                  className="w-full flex items-center gap-3 p-3 bg-zinc-50 rounded-xl hover:bg-zinc-100 transition-colors text-left">
+                  <span className="text-zinc-500 bg-zinc-100 w-7 h-7 rounded-lg flex items-center justify-center shrink-0">
+                    <Activity className="w-4 h-4" />
+                  </span>
+                  <span className="text-sm font-medium text-zinc-600 truncate flex-1">{habit.name}</span>
+                  <ChevronRight className="w-4 h-4 text-zinc-300 shrink-0" />
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Archived habits for this goal */}
+          {habits.filter((h) => h.is_archived).length > 0 && (
+            <div className="mt-6 space-y-2">
+              <button
+                type="button"
+                onClick={() => setIsArchivedExpanded(!isArchivedExpanded)}
+                className="flex items-center gap-1.5 text-[10px] font-black text-zinc-400 hover:text-zinc-650 uppercase tracking-widest transition-colors w-full text-left cursor-pointer"
+              >
+                <span>Archived habits ({habits.filter((h) => h.is_archived).length})</span>
+                <ChevronDown className={cn("w-3.5 h-3.5 transition-transform duration-200", isArchivedExpanded ? "rotate-180" : "rotate-0")} />
+              </button>
+              {isArchivedExpanded && (
+                <div className="space-y-2">
+                  {habits.filter((h) => h.is_archived).map((habit) => (
+                    <button key={habit.id} onClick={() => router.push(`/goals/habits/${habit.id}`)}
+                      className="w-full flex items-center gap-3 p-3 bg-zinc-50/50 border border-dashed border-zinc-200 rounded-xl hover:bg-zinc-100 transition-colors text-left opacity-60">
+                      <span className="text-zinc-400 bg-zinc-100 w-7 h-7 rounded-lg flex items-center justify-center shrink-0">
+                        <Activity className="w-4 h-4" />
+                      </span>
+                      <span className="text-sm font-medium text-zinc-500 truncate flex-1 line-through">{habit.name}</span>
+                      <ChevronRight className="w-4 h-4 text-zinc-300 shrink-0" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </section>
       </div>
 
-      {/* Modals */}
+      {/* Delete Goal Modal */}
       <ConfirmModal
         isOpen={isDeletingGoal}
         title="Delete Goal?"
-        message={`Are you sure you want to delete "${goal.title}" and all its tasks?`}
+        message={`Are you sure you want to delete "${goal.title}"? Linked habits will become standalone.`}
         confirmLabel="Delete"
         confirmVariant="danger"
         onConfirm={onDeleteGoal}
         onCancel={() => setIsDeletingGoal(false)}
       />
-      <ConfirmModal
-        isOpen={!!taskToDeleteId}
-        title="Delete Task?"
-        message="This task will be removed from your daily focus."
-        confirmLabel="Delete"
-        confirmVariant="danger"
-        onConfirm={() => {
-          if (taskToDeleteId) {
-            onDeleteTask(taskToDeleteId);
-            setTaskToDeleteId(null);
-          }
-        }}
-        onCancel={() => setTaskToDeleteId(null)}
-      />
 
-      {/* Add/Edit Task Modal */}
-      {(isAddingTask || editingTask) && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center p-4 bg-zinc-900/20 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl space-y-6 mb-4">
-            <div className="text-center space-y-1">
-              <h2 className="text-xl font-bold text-zinc-900">Focus Item</h2>
-              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
-                {editingTask ? "Edit Task" : "New Task"}
-              </p>
-            </div>
-            <form
-              onSubmit={
-                editingTask ? handleEditTaskSubmit : handleAddTaskSubmit
-              }
-              className="space-y-8"
-            >
-              <div>
-                <label className="block text-xs font-bold text-zinc-400 mb-3 tracking-widest uppercase">
-                  Task Name
-                </label>
-                <input
-                  autoFocus
-                  type="text"
-                  value={editingTask ? editingTask.title : newTaskTitle}
-                  onChange={(e) =>
-                    editingTask
-                      ? setEditingTask({
-                          ...editingTask,
-                          title: e.target.value,
-                        })
-                      : setNewTaskTitle(e.target.value)
-                  }
-                  placeholder="e.g. Meditate 10 minutes..."
-                  className="w-full px-0 py-2 border-b-2 border-zinc-100 focus:border-zinc-900 outline-none transition-colors text-lg"
-                />
-              </div>
-              <div className="space-y-3">
-                <label className="block text-xs font-bold text-zinc-400 tracking-widest uppercase">
-                  Recurring Days
-                </label>
-                <div className="flex justify-between">
-                  {daysShort.map((d, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => toggleDay(i)}
-                      className={cn(
-                        "w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold transition-all border",
-                        recurringDays.includes(i)
-                          ? "bg-zinc-900 border-zinc-900 text-white"
-                          : "bg-white border-zinc-100 text-zinc-400 hover:border-zinc-200 shadow-sm",
-                      )}
-                    >
-                      {d}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-[10px] text-zinc-300 uppercase tracking-widest text-center">
-                  Leave empty = every day
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsAddingTask(false);
-                    setEditingTask(null);
-                    setRecurringDays([]);
-                  }}
-                  className="flex-1 py-3 rounded-xl border border-zinc-200 text-zinc-600 font-semibold hover:bg-zinc-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 rounded-xl bg-zinc-900 text-white font-semibold hover:bg-zinc-800 transition-colors"
-                >
-                  Save
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {/* Add Habit Modal (Integrated) */}
+      {isAddingHabit && (
+        <HabitFormModal
+          editingHabit={null}
+          goals={goals}
+          presetGoalId={goal.id}
+          onSave={onAddHabit}
+          onClose={() => setIsAddingHabit(false)}
+        />
       )}
     </div>
   );

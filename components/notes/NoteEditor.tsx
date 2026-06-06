@@ -9,6 +9,7 @@ import {
 } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
+  ChevronLeft,
   MoreVertical,
   Pin,
   PinOff,
@@ -30,7 +31,6 @@ import {
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import TextAlign from "@tiptap/extension-text-align";
-import ModuleHeader from "@/components/ui/ModuleHeader";
 import { ConfirmModal } from "@/components/goals/ConfirmModal";
 import { useNoteStore } from "@/hooks/useNoteStore";
 import { useDebounce } from "use-debounce";
@@ -209,72 +209,48 @@ export default function NoteEditor() {
   return (
     <div className="flex flex-col h-screen bg-white">
       {/* Header */}
-      <ModuleHeader
-        backHref="/notes"
-        backLabel="Notes"
-        right={
-          <div className="flex items-center gap-2">
-            {hasEdited && (
-              <div className="text-[10px] uppercase tracking-widest font-bold text-zinc-300">
-                {saving ? (
-                  <span className="flex items-center gap-1">
-                    <Cloud className="w-3 h-3 animate-pulse" /> Saving...
-                  </span>
-                ) : lastSaved ? (
-                  <span className="flex items-center gap-1 text-emerald-500">
-                    <Check className="w-3 h-3" /> Saved
-                  </span>
-                ) : null}
-              </div>
-            )}
-            {/* 3-dot menu */}
-            <div className="relative" ref={menuRef}>
-              <button
-                onClick={() => setShowMenu((v) => !v)}
-                className="p-2 rounded-full hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 transition-all"
-              >
-                <MoreVertical className="w-4 h-4" />
-              </button>
-              {showMenu && (
-                <div className="absolute right-0 top-full mt-1 bg-white rounded-2xl shadow-xl border border-zinc-100 py-1 z-50 min-w-40">
-                  <button
-                    onClick={handleTogglePin}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
-                  >
-                    {note?.pinned ? (
-                      <PinOff className="w-4 h-4 text-zinc-400" />
-                    ) : (
-                      <Pin className="w-4 h-4 text-zinc-400" />
-                    )}
-                    {note?.pinned ? "Unpin note" : "Pin note"}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowTagsPanel((v) => !v);
-                      setShowMenu(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
-                  >
-                    <Tag className="w-4 h-4 text-zinc-400" />
-                    Edit tags
-                  </button>
-                  <div className="mx-3 border-t border-zinc-50" />
-                  <button
-                    onClick={() => {
-                      setShowDeleteConfirm(true);
-                      setShowMenu(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Delete note
-                  </button>
-                </div>
-              )}
+      <div className="px-6 pt-6 flex items-center justify-between">
+        <button onClick={() => router.push("/notes")}
+          className="flex items-center gap-1.5 -ml-1 text-zinc-500 hover:text-zinc-900 text-xs font-bold uppercase tracking-widest transition-colors">
+          <ChevronLeft className="w-5 h-5" /> Back
+        </button>
+        <div className="flex items-center gap-2">
+          {hasEdited && (
+            <div className="text-[10px] uppercase tracking-widest font-bold text-zinc-300">
+              {saving ? (
+                <span className="flex items-center gap-1">
+                  <Cloud className="w-3 h-3 animate-pulse" /> Saving...
+                </span>
+              ) : lastSaved ? (
+                <span className="flex items-center gap-1 text-emerald-500">
+                  <Check className="w-3 h-3" /> Saved
+                </span>
+              ) : null}
             </div>
+          )}
+          {/* Flat action buttons */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleTogglePin}
+              className={cn("p-2 rounded-lg transition-all", note?.pinned ? "text-indigo-500 hover:bg-indigo-50" : "text-zinc-400 hover:bg-zinc-100")}
+            >
+              {note?.pinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
+            </button>
+            <button
+              onClick={() => setShowTagsPanel((v) => !v)}
+              className={cn("p-2 rounded-lg transition-all", showTagsPanel ? "text-indigo-500 hover:bg-indigo-50" : "text-zinc-400 hover:bg-zinc-100")}
+            >
+              <Tag className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="p-2 text-red-400 hover:text-red-650 hover:bg-red-50 rounded-lg transition-all"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
           </div>
-        }
-      />
+        </div>
+      </div>
 
       {/* Delete confirm modal */}
       <ConfirmModal
